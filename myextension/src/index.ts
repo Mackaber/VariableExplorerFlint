@@ -5,6 +5,9 @@ import {
 
 import { Widget } from '@lumino/widgets';
 
+let ws: WebSocket;
+let state: Record<string, any> = {}; // store the local cache
+
 /**
  * Initialization data for the hello-world extension.
  */
@@ -14,27 +17,18 @@ const plugin: JupyterFrontEndPlugin<void> = {
   activate: (app: JupyterFrontEnd) => {
     const { shell } = app;
 
-    // Create the main widget
     const widget = new Widget();
     widget.id = 'redis-widget';
     widget.title.label = 'Redis Viewer';
     widget.title.closable = true;
 
-    // Create a container for everything
     const container = document.createElement('div');
     container.style.padding = '10px';
     container.style.display = 'flex';
     container.style.flexDirection = 'column';
 
-    // Create the Refresh button
-    const refreshButton = document.createElement('button');
-    refreshButton.innerText = 'Refresh';
-    refreshButton.style.marginBottom = '10px';
-    container.appendChild(refreshButton);
-
-    // Create the output area
     const output = document.createElement('pre');
-    output.textContent = 'Press Refresh to load Redis data...';
+    output.textContent = 'Connecting...';
     output.style.backgroundColor = '#000';
     output.style.padding = '10px';
     output.style.border = '1px solid #ddd';
@@ -42,28 +36,55 @@ const plugin: JupyterFrontEndPlugin<void> = {
     output.style.overflow = 'auto';
     container.appendChild(output);
 
-    // Function to fetch Redis data
-    const fetchRedisData = async () => {
-      output.textContent = 'Loading...';
-      try {
-        const response = await fetch('http://localhost:3000/redis-data');
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        output.textContent = JSON.stringify(data, null, 2);
-      } catch (error) {
-        output.textContent = `Error fetching Redis data:\n${error}`;
+    const sendSet = (key: string, value: any) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'set', key, value }));
       }
     };
 
-    // Set up the button click event
-    refreshButton.onclick = fetchRedisData;
+    const sendDelete = (key: string) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'delete', key }));
+      }
+    };
 
-    // Add container to widget
+    const renderState = () => {
+      output.textContent = JSON.stringify(state, null, 2);
+    };
+
+    function connectWebSocket() {
+      ws = new WebSocket('ws://localhost:3001');
+
+      ws.onopen = () => {
+        console.log('WebSocket connected.');
+        ws.send(JSON.stringify({ type: 'request_full_state' }));
+      };
+
+      ws.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        console.log('WebSocket message received:', message);
+
+        if (message.type === 'full_state') {
+          state = message.data;
+          renderState();
+        } else if (message.type === 'update') {
+          state[message.key] = message.value;
+          renderState();
+        } else if (message.type === 'delete') {
+          delete state[message.key];
+          renderState();
+        }
+      };
+
+      ws.onclose = () => {
+        console.log('WebSocket closed. Reconnecting in 1s...');
+        setTimeout(connectWebSocket, 1000);
+      };
+    }
+
+    connectWebSocket();
+
     widget.node.appendChild(container);
-
-    // Add widget to JupyterLab
     shell.add(widget, 'left');
   }
 };
