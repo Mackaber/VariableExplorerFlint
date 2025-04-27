@@ -18,10 +18,19 @@ class RedisState:
 
     def __setitem__(self, key: str, value: Any) -> None:
         self._client.set(self._full_key(key), json.dumps(value))
+        self._client.publish('redis_changes', json.dumps({
+            "type": "update",
+            "key": key,
+            "value": value
+        }))
 
     def __delitem__(self, key: str) -> None:
         if not self._client.delete(self._full_key(key)):
             raise KeyError(key)
+        self._client.publish('redis_changes', json.dumps({
+            "type": "delete",
+            "key": key
+        }))
 
     def __contains__(self, key: str) -> bool:
         return self._client.exists(self._full_key(key)) > 0
@@ -46,11 +55,4 @@ class RedisState:
 def __repr__(self) -> str:
     return f"<RedisState namespace='{self._namespace}' keys={self.keys()}>"
     
-def __setitem__(self, key: str, value: Any) -> None:
-    self._client.set(self._full_key(key), json.dumps(value))
-    self._client.publish('redis_changes', f"set:{key}")
 
-def __delitem__(self, key: str) -> None:
-    if not self._client.delete(self._full_key(key)):
-        raise KeyError(key)
-    self._client.publish('redis_changes', f"delete:{key}")

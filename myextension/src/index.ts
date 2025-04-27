@@ -61,18 +61,30 @@ const plugin: JupyterFrontEndPlugin<void> = {
       };
 
       ws.onmessage = (event) => {
-        const message = JSON.parse(event.data);
+        let message;
+      
+        try {
+          message = JSON.parse(event.data);
+        } catch (e) {
+          console.error('Invalid JSON from WebSocket:', event.data);
+          return;
+        }
+      
         console.log('WebSocket message received:', message);
-
-        if (message.type === 'full_state') {
-          state = message.data;
-          renderState();
-        } else if (message.type === 'update') {
-          state[message.key] = message.value;
-          renderState();
-        } else if (message.type === 'delete') {
-          delete state[message.key];
-          renderState();
+      
+        if (typeof message === 'object') {
+          if (message.type === 'full_state') {
+            state = message.data;
+            renderState();
+          } else if (message.type === 'update') {
+            state[message.key] = message.value;
+            renderState();
+          } else if (message.type === 'delete') {
+            delete state[message.key];
+            renderState();
+          } else {
+            console.warn('Unknown message type:', message.type);
+          }
         }
       };
 
