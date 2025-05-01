@@ -399,6 +399,17 @@ files = [
 ]
 
 [[package]]
+name = "codeium-jupyter"
+version = "2.1.2"
+description = "The modern coding superpower: free AI code acceleration plugin for your favorite languages. Type less. Code more. Ship faster."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "codeium_jupyter-2.1.2-py3-none-any.whl", hash = "sha256:5b607d3523e7e6ff54cdf1eeea4f28db154360d7dcc97c7222e67d1de64a3a94"},
+    {file = "codeium_jupyter-2.1.2.tar.gz", hash = "sha256:adc7014eb73bdb22f3ad49468a5cb073b495cb0472b34df567331537229356a4"},
+]
+
+[[package]]
 name = "colorama"
 version = "0.4.6"
 description = "Cross-platform colored terminal text."
@@ -2275,4 +2286,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "144dc9761d0dace0eda68c0c8ef30501171b448d6ed04fee54402df7538a7222"
+content-hash = "d24ae0f65a04815f2beef2b68416e2d3c2d887e5d6e8b0023e48d477c3a35097"
