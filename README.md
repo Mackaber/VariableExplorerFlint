@@ -57,3 +57,5 @@ state['dios'] = [
 #...
 state['dios'][0]['soy'] = "Los"
 ```
+
+https://chatgpt.com/c/67e9f2b7-3574-8000-acc9-d108748bd71f
